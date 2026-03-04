@@ -1,0 +1,18 @@
+import java.util.LinkedList;
+
+// Chained hashing implementation- Each table entry points to a linked list of key-value pairs
+ 
+public class ChainedHash {
+    
+    // Node class for linked list chains
+    private class Node {
+        String key;
+        String value;
+        Node next;
+        
+        Node(String key, String value) {
+            this.key = key;
+            this.value = value;
+            this.next = null;
+        }
+    }
