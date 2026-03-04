@@ -1,0 +1,129 @@
+import java.util.Random;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+
+// Main experiment class for timing and comparing hash table implementations
+ 
+public class HashExperiment {
+    
+    private static final int N = 1 << 20; // 2^20 = 1,048,576
+    private static final int DATA_SIZE = 950000; // Use first 950k pairs
+    private static final int NUM_RUNS = 30; // Run the experiments 30 times
+    private static final int[] LOAD_FACTORS = {75, 80, 85, 90, 95}; // percentages
+    
+    private KeyValuePair[] data;
+    
+    public HashExperiment() {
+        generateData();
+    }
+    
+    // Generate N key-value pairs with shuffled keys
+     
+    private void generateData() {
+        System.out.println("Generating " + N + " key-value pairs...");
+        
+        // Create array of keys 1..N
+        Integer[] keys = new Integer[N];
+        for (int i = 0; i < N; i++) {
+            keys[i] = i + 1;
+        }
+        
+        // Shuffle keys
+        List<Integer> keyList = Arrays.asList(keys);
+        Collections.shuffle(keyList, new Random(42)); // fixed seed for reproducibility
+        
+        // Create key-value pairs
+        data = new KeyValuePair[N];
+        for (int i = 0; i < N; i++) {
+            String key = keyList.get(i).toString();
+            String value = String.valueOf(i + 1); // value is the original position number
+            data[i] = new KeyValuePair(key, value);
+        }
+        
+        System.out.println("Data generation complete.");
+        System.out.println("First 5 pairs (shuffled order):");
+        for (int i = 0; i < 5; i++) {
+            System.out.println("  Key: " + data[i].getKey() + 
+                             ", Value: " + data[i].getValue());
+        }
+    }
+    
+    // Find next prime number greater than or equal to n
+     
+    private int nextPrime(int n) {
+        while (!isPrime(n)) {
+            n++;
+        }
+        return n;
+    }
+    
+    private boolean isPrime(int n) {
+        if (n <= 1) return false;
+        if (n <= 3) return true;
+        if (n % 2 == 0 || n % 3 == 0) return false;
+        
+        for (int i = 5; i * i <= n; i += 6) {
+            if (n % i == 0 || n % (i + 2) == 0) return false;
+        }
+        return true;
+    }
+    
+    // Run timing experiment for open hashing
+     
+    private TimingResult timeOpenHashing(int loadPercentage) {
+        // Calculate m based on load factor: load = N/m => m = N/load
+        double load = loadPercentage / 100.0;
+        int m = (int) Math.ceil(DATA_SIZE / load);
+        m = nextPrime(m); // Use prime table size
+        
+        long totalInsertTime = 0;
+        long totalLookupTime = 0;
+        long totalCollisions = 0;
+        
+        for (int run = 0; run < NUM_RUNS; run++) {
+            OpenHash hashTable = new OpenHash(m);
+            
+            // Insert data
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < DATA_SIZE; i++) {
+                hashTable.insert(data[i].getKey(), data[i].getValue());
+            }
+            long end = System.currentTimeMillis();
+            totalInsertTime += (end - start);
+            
+            // Perform lookups (search for first 1000 keys)
+            start = System.currentTimeMillis();
+            for (int i = 0; i < 1000; i++) {
+                hashTable.lookup(data[i].getKey());
+            }
+            end = System.currentTimeMillis();
+            totalLookupTime += (end - start);
+            
+            totalCollisions += hashTable.getCollisions();
+        }
+        
+        return new TimingResult(
+            totalInsertTime / (double) NUM_RUNS,
+            totalLookupTime / (double) NUM_RUNS,
+            totalCollisions / (double) NUM_RUNS,
+            m
+        );
+    }
+    
+    // Run timing experiment for chained hashing
+     
+    private TimingResult timeChainedHashing(int loadPercentage) {
+        // For chained hashing, m can be smaller than N
+        // Let's use m = DATA_SIZE / 10 as base and adjust for load factor
+        double load = loadPercentage / 100.0;
+        int m = (int) Math.ceil(DATA_SIZE / (10 * load)); // Scale for load factor
+        m = nextPrime(m);
+        
+        long totalInsertTime = 0;
+        long totalLookupTime = 0;
+        long totalCollisions = 0;
+        
+        for (int run = 0; run < NUM_RUNS; run++) {
+            ChainedHash hashTable = new ChainedHash(m);
