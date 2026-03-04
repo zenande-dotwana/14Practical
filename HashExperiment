@@ -127,3 +127,82 @@ public class HashExperiment {
         
         for (int run = 0; run < NUM_RUNS; run++) {
             ChainedHash hashTable = new ChainedHash(m);
+
+// Insert data
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < DATA_SIZE; i++) {
+                hashTable.insert(data[i].getKey(), data[i].getValue());
+            }
+            long end = System.currentTimeMillis();
+            totalInsertTime += (end - start);
+            
+            // Perform lookups (search for first 1000 keys)
+            start = System.currentTimeMillis();
+            for (int i = 0; i < 1000; i++) {
+                hashTable.lookup(data[i].getKey());
+            }
+            end = System.currentTimeMillis();
+            totalLookupTime += (end - start);
+            
+            totalCollisions += hashTable.getCollisions();
+        }
+        
+        return new TimingResult(
+            totalInsertTime / (double) NUM_RUNS,
+            totalLookupTime / (double) NUM_RUNS,
+            totalCollisions / (double) NUM_RUNS,
+            m
+        );
+    }
+    
+    // Run all experiments and display results table
+     
+    public void runExperiments() {
+        System.out.println("\n" + "=".repeat(80));
+        System.out.println("HASH TABLE PERFORMANCE COMPARISON");
+        System.out.println("=".repeat(80));
+        System.out.printf("Data size: %d key-value pairs%n", DATA_SIZE);
+        System.out.printf("Number of runs per test: %d%n", NUM_RUNS);
+        System.out.println("-".repeat(80));
+        
+        // Table header
+        System.out.printf("%-12s %-12s %-12s %-12s %-12s %-12s %-12s%n",
+            "Load Factor", "Method", "m (size)", "Insert(ms)", "Lookup(ms)", "Collisions", "Avg Chain");
+        System.out.println("-".repeat(80));
+        
+        for (int load : LOAD_FACTORS) {
+            // Open hashing results
+            TimingResult openResult = timeOpenHashing(load);
+            System.out.printf("%-12d %-12s %-12d %-12.2f %-12.2f %-12.0f %-12s%n",
+                load, "Open", openResult.tableSize, 
+                openResult.insertTime, openResult.lookupTime, 
+                openResult.collisions, "N/A");
+            
+            // Chained hashing results
+            TimingResult chainResult = timeChainedHashing(load);
+            System.out.printf("%-12d %-12s %-12d %-12.2f %-12.2f %-12.0f %-12.2f%n",
+                load, "Chained", chainResult.tableSize,
+                chainResult.insertTime, chainResult.lookupTime,
+                chainResult.collisions, 
+                (double) DATA_SIZE / chainResult.tableSize);
+            
+            System.out.println("-".repeat(80));
+        }
+    }
+    
+    // Inner class to hold timing results
+     
+    private class TimingResult {
+        double insertTime;
+        double lookupTime;
+        double collisions;
+        int tableSize;
+        
+        TimingResult(double insertTime, double lookupTime, double collisions, int tableSize) {
+            this.insertTime = insertTime;
+            this.lookupTime = lookupTime;
+            this.collisions = collisions;
+            this.tableSize = tableSize;
+        }
+    }
+    
