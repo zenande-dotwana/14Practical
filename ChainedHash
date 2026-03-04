@@ -16,3 +16,115 @@ public class ChainedHash {
             this.next = null;
         }
     }
+
+private Node[] table;
+    private int m; // table size
+    private int size; // number of elements
+    private int collisions; // collision counter
+    
+    public ChainedHash(int m) {
+        this.m = m;
+        this.table = new Node[m + 1]; // index from 1 to m
+        this.size = 0;
+        this.collisions = 0;
+    }
+    
+    // Hash function - same as in OpenHash for fair comparison --Returns index in [1, m]
+     
+    private int hash(String key) {
+        final int base = 31;
+        long hash = 0;
+        
+        for (int i = 0; i < key.length(); i++) {
+            hash = (hash * base + key.charAt(i)) % m;
+        }
+        
+        return (int)((hash % m) + 1);
+    }
+    
+    // Insert key-value pair into chained hash table
+     
+    public void insert(String key, String value) {
+        int index = hash(key);
+        
+        // If chain is empty, create new node
+        if (table[index] == null) {
+            table[index] = new Node(key, value);
+            size++;
+            return;
+        }
+        
+        // Search chain for key
+        Node current = table[index];
+        Node prev = null;
+        
+        while (current != null) {
+            collisions++; // Count each comparison as a collision
+            if (current.key.equals(key)) {
+                // Update existing key
+                current.value = value;
+                return;
+            }
+            prev = current;
+            current = current.next;
+        }
+        
+        // Key not found, add to end of chain
+        prev.next = new Node(key, value);
+        size++;
+    }
+    
+    // Look up value by key
+     
+    public String lookup(String key) {
+        int index = hash(key);
+        
+        Node current = table[index];
+        while (current != null) {
+            if (current.key.equals(key)) {
+                return current.value;
+            }
+            current = current.next;
+        }
+        
+        return null; // key not found
+    }
+    
+    // Check if key is in table
+     
+    public boolean isInTable(String key) {
+        return lookup(key) != null;
+    }
+    
+    public int getSize() {
+        return size;
+    }
+    
+    public int getCollisions() {
+        return collisions;
+    }
+    
+    public double getLoadFactor() {
+        return (double) size / m;
+    }
+    
+    // Get average chain length (for analysis purposes)
+     
+    public double getAverageChainLength() {
+        int totalNodes = 0;
+        int nonEmptyChains = 0;
+        
+        for (int i = 1; i <= m; i++) {
+            if (table[i] != null) {
+                nonEmptyChains++;
+                Node current = table[i];
+                while (current != null) {
+                    totalNodes++;
+                    current = current.next;
+                }
+            }
+        }
+        
+        return nonEmptyChains == 0 ? 0 : (double) totalNodes / nonEmptyChains;
+    }
+}
