@@ -50,3 +50,50 @@ public class OpenHash {
                 throw new RuntimeException("Hash table is full");
             }
         }
+// Found empty slot
+        table[index] = new KeyValuePair(key, value);
+        size++;
+    }
+    
+    // Look up value by key
+     
+    public String lookup(String key) {
+        int index = hash(key);
+        int originalIndex = index;
+        
+        // Linear probing until we find the key or hit an empty slot
+        while (table[index] != null) {
+            if (table[index].getKey().equals(key)) {
+                return table[index].getValue();
+            }
+            
+            index = (index % m) + 1;
+            
+            // If we've checked all positions, key not found
+            if (index == originalIndex) {
+                break;
+            }
+        }
+        
+        return null; // key not found
+    }
+    
+    // Check if key is in table
+     
+    public boolean isInTable(String key) {
+        return lookup(key) != null;
+    }
+    
+    public int getSize() {
+        return size;
+    }
+    
+    public int getCollisions() {
+        return collisions;
+    }
+    
+    public double getLoadFactor() {
+        return (double) size / m;
+    }
+}
+
